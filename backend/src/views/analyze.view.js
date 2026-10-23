@@ -6,6 +6,7 @@ export function renderAnalyze({ snapshot, cached }) {
       cached,
       stats: snapshot.stats,
       tree: snapshot.tree,
+      graph: snapshot.graph,
     },
   };
 }

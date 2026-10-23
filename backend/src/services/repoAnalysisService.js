@@ -2,12 +2,12 @@ import { snapshotId, createSnapshot } from '../models/repoSnapshot.js';
 import { extractSourceFiles } from './ingest/archiveExtractor.js';
 import { parseGithubUrl } from './ingest/githubUrl.js';
 
-// Orchestrates Phase 1 ingestion: parse URL -> (cache?) -> download -> unzip -> index.
-// Later phases append stages here (parse, resolve, graph, metrics) without touching
-// controllers or routes.
+// Orchestrates ingestion: parse URL -> (cache?) -> download -> unzip -> parse imports -> graph.
+// Later phases append stages here (metrics, algorithms) without touching controllers or routes.
 export class RepoAnalysisService {
-  constructor({ archiveClient, snapshotRepository, limits, logger }) {
+  constructor({ archiveClient, sourceAnalysis, snapshotRepository, limits, logger }) {
     this.archiveClient = archiveClient;
+    this.sourceAnalysis = sourceAnalysis;
     this.snapshots = snapshotRepository;
     this.limits = limits;
     this.logger = logger;
@@ -39,11 +39,19 @@ export class RepoAnalysisService {
     const extraction = extractSourceFiles(zip, this.limits);
     const ingestMs = Math.round(performance.now() - started);
 
-    const snapshot = createSnapshot({ repo, extraction, ingestMs });
+    const graph = await this.sourceAnalysis.analyze(extraction.files);
+
+    const snapshot = createSnapshot({ repo, extraction, graph, ingestMs });
     this.snapshots.save(snapshot);
 
     this.logger.info(
-      { repo: `${repo.owner}/${repo.name}`, files: snapshot.stats.files, ingestMs },
+      {
+        repo: `${repo.owner}/${repo.name}`,
+        files: snapshot.stats.files,
+        ingestMs,
+        parseMs: graph.stats.parseMs,
+        edges: graph.stats.edges,
+      },
       'repository ingested',
     );
     return snapshot;
