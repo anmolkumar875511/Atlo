@@ -1,0 +1,45 @@
+import { randomUUID } from 'node:crypto';
+import compression from 'compression';
+import cors from 'cors';
+import express from 'express';
+import helmet from 'helmet';
+import pinoHttp from 'pino-http';
+import { API_PREFIX } from '.src/constants/api.js';
+import { errorHandler } from '.src/middleware/errorHandler.js';
+import { notFound } from '.src/middleware/notFound.js';
+import { createApiRouter } from '.src/routes/index.js';
+
+// Builds the Express app without starting it, so tests can use it with supertest.
+export function createApp({ config, logger, container }) {
+  const app = express();
+  app.disable('x-powered-by');
+
+  app.use(
+    pinoHttp({
+      logger,
+      genReqId: (req, res) => {
+        const incoming = req.headers['x-request-id'];
+        const id = typeof incoming === 'string' && incoming.length <= 100 ? incoming : randomUUID();
+        res.setHeader('x-request-id', id);
+        return id;
+      },
+      autoLogging: { ignore: (req) => req.url === `${API_PREFIX}/health` },
+    }),
+  );
+  app.use(helmet());
+  app.use(cors({ origin: config.corsOrigins, methods: ['GET', 'POST'] }));
+  app.use(compression());
+  app.use(express.json({ limit: '10kb' }));
+
+  app.use(
+    API_PREFIX,
+    createApiRouter({
+      controllers: container.controllers,
+      rateLimitPerMinute: config.rateLimitPerMinute,
+    }),
+  );
+
+  app.use(notFound);
+  app.use(errorHandler(logger));
+  return app;
+}
