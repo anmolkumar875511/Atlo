@@ -4,10 +4,10 @@ import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 import pinoHttp from 'pino-http';
-import { API_PREFIX } from '.src/constants/api.js';
-import { errorHandler } from '.src/middleware/errorHandler.js';
-import { notFound } from '.src/middleware/notFound.js';
-import { createApiRouter } from '.src/routes/index.js';
+import { API_PREFIX } from './src/constants/api.js';
+import { errorHandler } from './src/middleware/errorHandler.js';
+import { notFound } from './src/middleware/notFound.js';
+import { createApiRouter } from './src/routes/index.js';
 
 // Builds the Express app without starting it, so tests can use it with supertest.
 export function createApp({ config, logger, container }) {

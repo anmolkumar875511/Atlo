@@ -1,8 +1,8 @@
 import 'dotenv/config';
 import { createApp } from './app.js';
-import { loadConfig } from '.src/config/env.js';
-import { createContainer } from '.src/container.js';
-import { createLogger } from '.src/lib/logger.js';
+import { loadConfig } from './src/config/env.js';
+import { createContainer } from './src/container.js';
+import { createLogger } from './src/lib/logger.js';
 
 const config = loadConfig();
 const logger = createLogger({ level: config.logLevel, env: config.env });
