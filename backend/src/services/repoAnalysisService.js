@@ -39,9 +39,9 @@ export class RepoAnalysisService {
     const extraction = extractSourceFiles(zip, this.limits);
     const ingestMs = Math.round(performance.now() - started);
 
-    const graph = await this.sourceAnalysis.analyze(extraction.files);
+    const analysis = await this.sourceAnalysis.analyze(extraction.files);
 
-    const snapshot = createSnapshot({ repo, extraction, graph, ingestMs });
+    const snapshot = createSnapshot({ repo, extraction, analysis, ingestMs });
     this.snapshots.save(snapshot);
 
     this.logger.info(
@@ -49,8 +49,8 @@ export class RepoAnalysisService {
         repo: `${repo.owner}/${repo.name}`,
         files: snapshot.stats.files,
         ingestMs,
-        parseMs: graph.stats.parseMs,
-        edges: graph.stats.edges,
+        parseMs: analysis.graph.stats.parseMs,
+        edges: analysis.graph.stats.edges,
       },
       'repository ingested',
     );
