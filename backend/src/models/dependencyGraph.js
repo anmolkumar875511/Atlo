@@ -22,13 +22,22 @@ export function countLines(content) {
 
 // Pure function: parsed + resolved imports in, graph JSON out.
 // Nodes are source files. An edge means "source imports target".
-export function buildDependencyGraph({ sources, importsByFile, parseMs, parseErrors }) {
+export function buildDependencyGraph({
+  sources,
+  importsByFile,
+  metricsByFile,
+  parseMs,
+  parseErrors,
+}) {
   const nodes = sources.map((file) => ({
     id: file.path,
     name: file.name,
     language: file.language,
     lines: countLines(file.content),
     size: file.size,
+    tokens: metricsByFile.get(file.path)?.tokens ?? 0,
+    complexity: metricsByFile.get(file.path)?.complexity ?? 0,
+    functionCount: metricsByFile.get(file.path)?.functions.length ?? 0,
     cluster: clusterOf(file.path),
     fanIn: 0,
     fanOut: 0,
