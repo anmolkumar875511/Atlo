@@ -4,6 +4,16 @@ const OWNER_RE = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
 const REPO_RE = /^[A-Za-z0-9._-]{1,100}$/;
 const REF_RE = /^[A-Za-z0-9._/-]{1,200}$/;
 
+// Parses what a person might paste into the input box and returns a clean reference.
+// Accepts:
+//   https://github.com/owner/repo
+//   https://github.com/owner/repo.git
+//   https://github.com/owner/repo/tree/branch-or-tag
+//   github.com/owner/repo
+//   owner/repo
+//
+// Known limit: for `/tree/<ref>/...` only the first segment is used as the ref, so
+// branch names that contain a slash are not supported yet.
 export function parseGithubUrl(input) {
   if (typeof input !== 'string' || !input.trim()) {
     throw new InvalidRepoUrlError('Please enter a GitHub repository URL.');
