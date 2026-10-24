@@ -8,10 +8,13 @@ const YIELD_EVERY = 100;
 
 const tick = () => new Promise((resolve) => setImmediate(resolve));
 
-// Phase 2 stages: parse each source file -> resolve its imports -> build the graph.
+// Stages for each source file: parse once -> imports + metrics -> resolve imports.
+// Then the graph is built from all files together.
 export class SourceAnalysisService {
-  constructor({ importExtractor, logger }) {
-    this.extractor = importExtractor;
+  constructor({ parser, importExtractor, metricsExtractor, logger }) {
+    this.parser = parser;
+    this.importExtractor = importExtractor;
+    this.metricsExtractor = metricsExtractor;
     this.logger = logger;
   }
 
@@ -24,23 +27,27 @@ export class SourceAnalysisService {
       aliases: loadPathAliases(new Map(files.map((f) => [f.path, f.content]))),
     });
 
+    const fileAnalyses = new Map();
     const importsByFile = new Map();
     let parseErrors = 0;
 
     for (const [index, file] of sources.entries()) {
       try {
-        const { imports, hadErrors } = this.extractor.extract(file.content, grammarFor(file.path));
+        const grammar = grammarFor(file.path);
+        const tree = this.parser.parse(file.content, grammar);
+        const { imports, hadErrors } = this.importExtractor.extract(tree, grammar);
+        const metrics = this.metricsExtractor.extract(tree, grammar);
         if (hadErrors) parseErrors += 1; // tree-sitter still returns a usable partial tree
-        importsByFile.set(
-          file.path,
-          imports.map((imp) => ({
-            ...imp,
-            resolution:
-              imp.specifier === null
-                ? { kind: 'unresolved', reason: 'dynamic' }
-                : resolver.resolve(file.path, imp.specifier),
-          })),
-        );
+
+        const resolved = imports.map((imp) => ({
+          ...imp,
+          resolution:
+            imp.specifier === null
+              ? { kind: 'unresolved', reason: 'dynamic' }
+              : resolver.resolve(file.path, imp.specifier),
+        }));
+        importsByFile.set(file.path, resolved);
+        fileAnalyses.set(file.path, { ...metrics, imports: resolved });
       } catch (err) {
         // One broken file must never fail the whole repository.
         parseErrors += 1;
@@ -51,6 +58,13 @@ export class SourceAnalysisService {
     }
 
     const parseMs = Math.round(performance.now() - started);
-    return buildDependencyGraph({ sources, importsByFile, parseMs, parseErrors });
+    const graph = buildDependencyGraph({
+      sources,
+      importsByFile,
+      metricsByFile: fileAnalyses,
+      parseMs,
+      parseErrors,
+    });
+    return { graph, fileAnalyses };
   }
 }
