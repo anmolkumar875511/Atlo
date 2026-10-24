@@ -55,8 +55,8 @@ export class ImportExtractor {
     this.parser = parser;
   }
 
-  extract(content, grammar) {
-    const tree = this.parser.parse(content, grammar);
+  // Takes a tree that was already parsed, so each file is parsed only once.
+  extract(tree, grammar) {
     const query = this.parser.query(grammar, querySourceFor(grammar));
     const imports = query.matches(tree.rootNode).map(readMatch);
     // Matches come grouped by pattern; restore the order they appear in the file.
