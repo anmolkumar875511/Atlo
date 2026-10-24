@@ -31,12 +31,12 @@ export function createApp({ config, logger, container }) {
   app.use(compression());
   app.use(express.json({ limit: '10kb' }));
 
-
   app.use(
     API_PREFIX,
     createApiRouter({
       controllers: container.controllers,
       rateLimitPerMinute: config.rateLimitPerMinute,
+      readRateLimitPerMinute: config.readRateLimitPerMinute,
     }),
   );
 
