@@ -84,3 +84,19 @@ export class NotFoundError extends AppError {
     super(404, ERROR_CODES.NOT_FOUND, `Route not found: ${path}`);
   }
 }
+
+export class SnapshotNotFoundError extends AppError {
+  constructor() {
+    super(
+      404,
+      ERROR_CODES.SNAPSHOT_NOT_FOUND,
+      'This analysis has expired or does not exist. Analyze the repository again.',
+    );
+  }
+}
+
+export class FileNotFoundError extends AppError {
+  constructor(path) {
+    super(404, ERROR_CODES.FILE_NOT_FOUND, `File not found in this repository: ${path}`);
+  }
+}
