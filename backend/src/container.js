@@ -1,11 +1,14 @@
 import { AnalyzeController } from './controllers/analyze.controller.js';
+import { RepoController } from './controllers/repo.controller.js';
 import { HealthController } from './controllers/health.controller.js';
 import { LruCache } from './lib/lruCache.js';
 import { SnapshotRepository } from './repositories/snapshotRepository.js';
 import { GithubArchiveClient } from './services/ingest/githubArchiveClient.js';
 import { ImportExtractor } from './services/parser/importExtractor.js';
+import { MetricsExtractor } from './services/parser/metricsExtractor.js';
 import { TreeSitterParser } from './services/parser/treeSitterParser.js';
 import { RepoAnalysisService } from './services/repoAnalysisService.js';
+import { RepoQueryService } from './services/repoQueryService.js';
 import { SourceAnalysisService } from './services/sourceAnalysisService.js';
 
 // Composition root: the only file that knows how the pieces are wired together.
@@ -23,8 +26,11 @@ export function createContainer({ config, logger, overrides = {} }) {
     new LruCache({ maxEntries: config.cache.maxEntries, ttlMs: config.cache.ttlMs }),
   );
 
+  const parser = new TreeSitterParser();
   const sourceAnalysis = new SourceAnalysisService({
-    importExtractor: new ImportExtractor({ parser: new TreeSitterParser() }),
+    parser,
+    importExtractor: new ImportExtractor({ parser }),
+    metricsExtractor: new MetricsExtractor(),
     logger,
   });
 
@@ -39,6 +45,7 @@ export function createContainer({ config, logger, overrides = {} }) {
   return {
     controllers: {
       analyze: new AnalyzeController({ repoAnalysisService }),
+      repo: new RepoController({ repoQueryService: new RepoQueryService({ snapshotRepository }) }),
       health: new HealthController(),
     },
   };
