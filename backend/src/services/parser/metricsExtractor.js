@@ -145,7 +145,7 @@ export class MetricsExtractor {
 
       // A leaf is one token. Comments are not code, so they are not counted.
       // The root of an empty file is also a leaf, but it is not a token.
-      if (type !== profile.commentType && cursor.currentDepth > 0) tokens += 1;
+      if (type !== profile.commentType && markers.length > 0) tokens += 1;
       if (profile.logicalTokens.has(type)) addDecision();
       closeMarker(marker);
 
