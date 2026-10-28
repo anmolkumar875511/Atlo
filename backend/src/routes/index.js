@@ -38,5 +38,13 @@ export function createApiRouter({ controllers, rateLimitPerMinute, readRateLimit
     controllers.repo.search,
   );
 
+  // Health reads git history (a clone), so it is limited like analyze, not like a cheap read.
+  router.get(
+    '/repos/:id/health',
+    createRateLimiter(rateLimitPerMinute),
+    validateRequest({ params: repoParamsSchema }),
+    controllers.repo.health,
+  );
+
   return router;
 }
