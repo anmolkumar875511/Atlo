@@ -1,0 +1,242 @@
+.shell {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: min(100%, 1480px);
+  margin: 0 auto;
+  padding: clamp(18px, 3vw, 42px) clamp(16px, 4vw, 60px) 24px;
+  gap: clamp(24px, 3vw, 40px);
+}
+.shell::before {
+  position: fixed;
+  z-index: -1;
+  pointer-events: none;
+  content: '';
+  width: min(58vw, 760px);
+  aspect-ratio: 1;
+  top: -390px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgb(176 122 66 / 10%),
+    rgb(201 162 75 / 3%) 42%,
+    transparent 70%
+  );
+}
+.shell__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.shell__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  color: inherit;
+  text-decoration: none;
+}
+.shell__mark {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  flex: none;
+  color: var(--gold-300);
+  font-size: 30px;
+  border: 1px solid rgb(201 162 75 / 45%);
+  border-radius: 50%;
+  box-shadow: inset 0 0 18px rgb(201 162 75 / 7%);
+}
+.shell__brand-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.shell__title {
+  margin: 0;
+  color: var(--gold-300);
+  font-family: var(--font-display);
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: 0.22em;
+}
+.shell__tagline {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.shell__edition {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--text-muted);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+}
+.shell__edition-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--gold-400);
+  border-radius: 50%;
+  box-shadow: 0 0 12px rgb(216 184 100 / 55%);
+}
+.shell__phase {
+  margin-left: 8px;
+  padding: 5px 10px;
+  color: var(--gold-300);
+  border: 1px solid rgb(201 162 75 / 30%);
+  border-radius: 999px;
+  font-size: 10px;
+}
+.shell__main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: clamp(18px, 2.4vw, 30px);
+  min-width: 0;
+}
+.shell__intro {
+  position: relative;
+  max-width: 780px;
+  margin: 8px auto 0;
+  text-align: center;
+}
+.shell__eyebrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 0 0 16px;
+  color: var(--gold-400);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+.shell__eyebrow span {
+  display: block;
+  width: 28px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--bronze-400));
+}
+.shell__eyebrow span:last-child {
+  transform: rotate(180deg);
+}
+.shell__headline {
+  margin: 0;
+  color: var(--ivory-100);
+  font-family: var(--font-display);
+  font-size: clamp(30px, 5vw, 54px);
+  font-weight: 500;
+  line-height: 1.12;
+  letter-spacing: -0.035em;
+}
+.shell__headline em {
+  color: var(--gold-300);
+  font-weight: 400;
+}
+.shell__description {
+  max-width: 560px;
+  margin: 16px auto 0;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: clamp(13px, 1.5vw, 15px);
+  line-height: 1.8;
+}
+.shell__ornament {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 22px auto 0;
+  color: var(--bronze-400);
+  font-size: 11px;
+}
+.shell__ornament::before,
+.shell__ornament::after {
+  content: '';
+  width: 52px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgb(176 122 66 / 55%));
+}
+.shell__ornament::after {
+  transform: rotate(180deg);
+}
+.shell__footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  padding-top: 18px;
+  color: var(--text-muted);
+  font-size: 11px;
+  text-align: center;
+  border-top: 1px solid var(--border);
+}
+.shell__footer > span:first-child {
+  color: var(--gold-400);
+}
+.shell__footer-sep {
+  color: var(--bronze-400);
+}
+@media (max-width: 560px) {
+  .shell {
+    padding: 16px 12px 18px;
+    gap: 24px;
+  }
+  .shell__header {
+    align-items: flex-start;
+  }
+  .shell__mark {
+    width: 38px;
+    height: 38px;
+    font-size: 25px;
+  }
+  .shell__title {
+    font-size: 21px;
+  }
+  .shell__tagline {
+    max-width: 160px;
+    font-size: 8px;
+    letter-spacing: 0.1em;
+  }
+  .shell__edition {
+    gap: 6px;
+    font-size: 0;
+  }
+  .shell__edition-dot {
+    width: 7px;
+    height: 7px;
+  }
+  .shell__phase {
+    margin: 0;
+    font-size: 9px;
+  }
+  .shell__intro {
+    margin-top: 0;
+  }
+  .shell__eyebrow {
+    margin-bottom: 12px;
+    font-size: 9px;
+    letter-spacing: 0.16em;
+  }
+  .shell__description {
+    max-width: 340px;
+    margin-top: 12px;
+  }
+  .shell__ornament {
+    margin-top: 16px;
+  }
+  .shell__footer {
+    font-size: 10px;
+  }
+}
