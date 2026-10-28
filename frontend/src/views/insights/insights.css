@@ -1,0 +1,242 @@
+.sidepane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: var(--panel-height, 640px);
+  border-left: 1px solid var(--border);
+}
+
+.sidepane > .tabs {
+  padding: 0 var(--space-2);
+}
+
+.sidepane > .tabs .tabs__tab {
+  padding: var(--space-2) var(--space-3);
+  font-size: 12px;
+}
+
+.sidepane__body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* FilePane fills the body of the side pane instead of sizing itself. */
+.sidepane__body .filepane {
+  height: 100%;
+  border-left: 0;
+}
+
+.insight {
+  padding: var(--space-3) var(--space-4);
+  font-size: 12px;
+}
+
+.insight__lead {
+  margin: 0 0 var(--space-2);
+  color: var(--text-soft);
+  line-height: 1.5;
+}
+
+.insight__meta {
+  margin: 0 0 var(--space-3);
+  color: var(--text-muted);
+}
+
+.insight__note {
+  margin: 0;
+  padding: var(--space-4);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.insight__warn {
+  margin: 0 0 var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  color: var(--warning);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+}
+
+.insight__button,
+.insight__link {
+  color: var(--accent);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.insight__button {
+  padding: 2px var(--space-3);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+}
+
+.insight__link {
+  padding: 0;
+  text-decoration: underline;
+}
+
+.insight__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  list-style: none;
+}
+
+.insight__row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.insight__rank {
+  flex: none;
+  width: 18px;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.insight__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.insight__bar {
+  height: 4px;
+  margin: var(--space-1) 0;
+  background: var(--border);
+  border-radius: 2px;
+}
+
+.insight__bar span {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+}
+
+.insight__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin: var(--space-1) 0 0;
+  color: var(--text-muted);
+}
+
+.insight__reasons {
+  margin: var(--space-1) 0 0;
+  padding-left: var(--space-4);
+  color: var(--text-muted);
+}
+
+.insight__score {
+  flex: none;
+  min-width: 28px;
+  padding: 0 var(--space-2);
+  color: var(--accent);
+  text-align: center;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+}
+
+.stage {
+  flex: none;
+  padding: 0 var(--space-2);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: 999px;
+}
+
+.stage--warm-up {
+  color: var(--accent-contrast);
+  background: var(--gold-500);
+}
+
+.stage--connect {
+  color: var(--ivory-100);
+  background: var(--bronze-500);
+}
+
+.stage--core {
+  color: var(--ivory-100);
+  background: var(--oxblood-500);
+}
+
+.cycle {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.cycle--active {
+  border-color: var(--danger);
+}
+
+.cycle__head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-soft);
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.cycle__title {
+  color: var(--danger);
+}
+
+.cycle__loop {
+  word-break: break-all;
+}
+
+.cycle__action {
+  color: var(--text-muted);
+}
+
+.calls__toggle {
+  padding: 0;
+  font-size: 11px;
+  color: var(--text-muted);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.calls__body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: var(--space-1) 0 var(--space-1) var(--space-3);
+}
+
+.calls__label {
+  margin: var(--space-1) 0 0;
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.calls__link {
+  text-align: left;
+}
+
+.list__row {
+  flex-wrap: wrap;
+}
+
+.calls {
+  flex-basis: 100%;
+}
