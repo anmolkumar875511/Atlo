@@ -1,3 +1,5 @@
+import { isTestPath } from './onboarding.js';
+
 const MAX_EXTERNALS = 100;
 const MAX_UNRESOLVED = 200;
 
@@ -42,6 +44,9 @@ export function buildDependencyGraph({
     fanIn: 0,
     fanOut: 0,
     unresolved: 0,
+    blastRadius: 0,
+    isTest: isTestPath(file.path),
+    inCycle: false,
   }));
   const nodeById = new Map(nodes.map((n) => [n.id, n]));
 
@@ -94,6 +99,8 @@ export function buildDependencyGraph({
   return {
     nodes,
     edges,
+    callEdges: [],
+    cycles: [],
     externals: externalList.slice(0, MAX_EXTERNALS),
     unresolved: unresolvedList,
     stats: {
@@ -104,6 +111,23 @@ export function buildDependencyGraph({
       assetImports,
       parseErrors,
       parseMs,
+      callEdges: 0,
+      cycles: 0,
     },
   };
+}
+
+// Adds what the graph algorithms found. Kept separate from buildDependencyGraph so the base graph
+// stays a simple "files and imports" structure and each algorithm can be tested on its own.
+export function addGraphInsights(graph, { cycles, blastRadius, callEdges }) {
+  const inCycle = new Set(cycles.flatMap((c) => c.files));
+  for (const node of graph.nodes) {
+    node.blastRadius = blastRadius.get(node.id) ?? 0;
+    node.inCycle = inCycle.has(node.id);
+  }
+  graph.cycles = cycles;
+  graph.callEdges = callEdges;
+  graph.stats.cycles = cycles.length;
+  graph.stats.callEdges = callEdges.length;
+  return graph;
 }
