@@ -1,10 +1,12 @@
-import { renderFile, renderSearch } from '../views/repo.view.js';
+import { renderFile, renderHealth, renderSearch } from '../views/repo.view.js';
 
 export class RepoController {
-  constructor({ repoQueryService }) {
+  constructor({ repoQueryService, healthService }) {
     this.service = repoQueryService;
+    this.healthService = healthService;
     this.file = this.file.bind(this);
     this.search = this.search.bind(this);
+    this.health = this.health.bind(this);
   }
 
   // GET /api/repos/:id/files?path=src/index.js
@@ -19,5 +21,11 @@ export class RepoController {
     const { id } = req.valid.params;
     const { q, limit } = req.valid.query;
     res.json(renderSearch(q, this.service.search(id, q, limit)));
+  }
+
+  // GET /api/repos/:id/health   (reads git history the first time, so it can take a few seconds)
+  async health(req, res) {
+    const { id } = req.valid.params;
+    res.json(renderHealth(await this.healthService.getReport(id)));
   }
 }
