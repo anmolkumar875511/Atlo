@@ -15,7 +15,10 @@ const server = app.listen(config.port, () => {
 
 function shutdown(signal) {
   logger.info({ signal }, 'shutting down');
-  server.close(() => process.exit(0));
+  server.close(async () => {
+    await container.dispose();
+    process.exit(0);
+  });
   setTimeout(() => process.exit(1), 10_000).unref();
 }
 process.on('SIGINT', () => shutdown('SIGINT'));
