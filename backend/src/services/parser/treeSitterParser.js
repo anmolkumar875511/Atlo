@@ -1,5 +1,6 @@
 import Parser from 'tree-sitter';
 import JavaScript from 'tree-sitter-javascript';
+import Python from 'tree-sitter-python';
 import TypeScript from 'tree-sitter-typescript';
 
 // JSX is part of the javascript grammar; TSX needs its own grammar.
@@ -7,9 +8,11 @@ const LANGUAGES = {
   javascript: JavaScript,
   typescript: TypeScript.typescript,
   tsx: TypeScript.tsx,
+  python: Python,
 };
 
 export function grammarFor(path) {
+  if (/\.py$/i.test(path)) return 'python';
   if (/\.tsx$/i.test(path)) return 'tsx';
   if (/\.(ts|mts|cts)$/i.test(path)) return 'typescript';
   return 'javascript';
