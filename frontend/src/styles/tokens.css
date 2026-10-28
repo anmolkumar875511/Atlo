@@ -1,0 +1,62 @@
+/*
+ * Atlo design tokens — obsidian, aged gold, bronze, ivory, oxblood.
+ * Single source of truth for colour, type and spacing. If the logo palette changes,
+ * edit the raw palette block only; every component uses the semantic tokens below it.
+ */
+:root {
+  /* Raw palette */
+  --obsidian-950: #08070a;
+  --obsidian-900: #0d0c10;
+  --obsidian-800: #141319;
+  --obsidian-700: #1c1b22;
+  --obsidian-600: #2a2832;
+  --gold-300: #e2c98a;
+  --gold-400: #d8b864;
+  --gold-500: #c9a24b;
+  --gold-600: #a8832f;
+  --bronze-400: #b07a42;
+  --bronze-500: #8c5a2b;
+  --ivory-100: #f1ebdb;
+  --ivory-300: #cdc6b4;
+  --ivory-500: #8f8a7d;
+  --oxblood-400: #b0304a;
+  --oxblood-500: #7a1a2b;
+  --oxblood-900: #2a0a10;
+
+  /* Semantic tokens */
+  --bg: var(--obsidian-900);
+  --bg-deep: var(--obsidian-950);
+  --surface: var(--obsidian-800);
+  --surface-raised: var(--obsidian-700);
+  --border: var(--obsidian-600);
+  --border-strong: var(--bronze-500);
+  --text: var(--ivory-100);
+  --text-muted: var(--ivory-500);
+  --text-soft: var(--ivory-300);
+  --accent: var(--gold-500);
+  --accent-hover: var(--gold-400);
+  --accent-contrast: var(--obsidian-950);
+  --danger: var(--oxblood-400);
+  --danger-bg: var(--oxblood-900);
+  --warning: var(--bronze-400);
+
+  /* Language badges (kept muted: no neon) */
+  --lang-js: var(--gold-500);
+  --lang-ts: var(--ivory-300);
+  --lang-py: var(--bronze-400);
+  --lang-other: var(--ivory-500);
+
+  /* Type, shape, motion */
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --font-display: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --font-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --ease: 160ms ease;
+}
