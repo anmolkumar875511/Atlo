@@ -11,36 +11,39 @@ import { createApiRouter } from './src/routes/index.js';
 
 // Builds the Express app without starting it, so tests can use it with supertest.
 export function createApp({ config, logger, container }) {
-  const app = express();
-  app.disable('x-powered-by');
+    const app = express();
+    app.disable('x-powered-by');
 
-  app.use(
-    pinoHttp({
-      logger,
-      genReqId: (req, res) => {
-        const incoming = req.headers['x-request-id'];
-        const id = typeof incoming === 'string' && incoming.length <= 100 ? incoming : randomUUID();
-        res.setHeader('x-request-id', id);
-        return id;
-      },
-      autoLogging: { ignore: (req) => req.url === `${API_PREFIX}/health` },
-    }),
-  );
-  app.use(helmet());
-  app.use(cors({ origin: config.corsOrigins, methods: ['GET', 'POST'] }));
-  app.use(compression());
-  app.use(express.json({ limit: '10kb' }));
+    app.use(
+        pinoHttp({
+            logger,
+            genReqId: (req, res) => {
+                const incoming = req.headers['x-request-id'];
+                const id =
+                    typeof incoming === 'string' && incoming.length <= 100
+                        ? incoming
+                        : randomUUID();
+                res.setHeader('x-request-id', id);
+                return id;
+            },
+            autoLogging: { ignore: (req) => req.url === `${API_PREFIX}/health` },
+        })
+    );
+    app.use(helmet());
+    app.use(cors({ origin: config.corsOrigins, methods: ['GET', 'POST'] }));
+    app.use(compression());
+    app.use(express.json({ limit: '10kb' }));
 
-  app.use(
-    API_PREFIX,
-    createApiRouter({
-      controllers: container.controllers,
-      rateLimitPerMinute: config.rateLimitPerMinute,
-      readRateLimitPerMinute: config.readRateLimitPerMinute,
-    }),
-  );
+    app.use(
+        API_PREFIX,
+        createApiRouter({
+            controllers: container.controllers,
+            rateLimitPerMinute: config.rateLimitPerMinute,
+            readRateLimitPerMinute: config.readRateLimitPerMinute,
+        })
+    );
 
-  app.use(notFound);
-  app.use(errorHandler(logger));
-  return app;
+    app.use(notFound);
+    app.use(errorHandler(logger));
+    return app;
 }

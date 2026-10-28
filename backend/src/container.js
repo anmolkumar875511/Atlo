@@ -18,59 +18,59 @@ const WORKER_URL = new URL('./services/parser/parseWorker.js', import.meta.url);
 // Composition root: the only file that knows how the pieces are wired together.
 // Tests pass `overrides` (e.g. a fake archive client) instead of mocking modules.
 export function createContainer({ config, logger, overrides = {} }) {
-  const archiveClient =
-    overrides.archiveClient ??
-    new GithubArchiveClient({
-      maxZipBytes: config.limits.maxZipBytes,
-      timeoutMs: config.downloadTimeoutMs,
-      token: config.githubToken,
+    const archiveClient =
+        overrides.archiveClient ??
+        new GithubArchiveClient({
+            maxZipBytes: config.limits.maxZipBytes,
+            timeoutMs: config.downloadTimeoutMs,
+            token: config.githubToken,
+        });
+
+    const snapshotRepository = new SnapshotRepository(
+        new LruCache({ maxEntries: config.cache.maxEntries, ttlMs: config.cache.ttlMs })
+    );
+
+    // Worker threads start lazily, on the first repository big enough to need them.
+    const pool =
+        config.workers.count > 0
+            ? new WorkerPool({ size: config.workers.count, workerUrl: WORKER_URL, logger })
+            : null;
+    const runner = new AnalysisRunner({
+        analyzer: new FileAnalyzer(),
+        pool,
+        minFilesForPool: config.workers.minFiles,
+        logger,
+    });
+    const sourceAnalysis = new SourceAnalysisService({ runner, logger });
+
+    const repoAnalysisService = new RepoAnalysisService({
+        archiveClient,
+        sourceAnalysis,
+        snapshotRepository,
+        limits: config.limits,
+        logger,
     });
 
-  const snapshotRepository = new SnapshotRepository(
-    new LruCache({ maxEntries: config.cache.maxEntries, ttlMs: config.cache.ttlMs }),
-  );
+    const churnClient =
+        overrides.churnClient ??
+        (config.churn.enabled
+            ? new GitChurnClient({
+                  timeoutMs: config.churn.timeoutMs,
+                  windowDays: config.churn.windowDays,
+              })
+            : null);
+    const healthService = new HealthService({ snapshotRepository, churnClient, logger });
 
-  // Worker threads start lazily, on the first repository big enough to need them.
-  const pool =
-    config.workers.count > 0
-      ? new WorkerPool({ size: config.workers.count, workerUrl: WORKER_URL, logger })
-      : null;
-  const runner = new AnalysisRunner({
-    analyzer: new FileAnalyzer(),
-    pool,
-    minFilesForPool: config.workers.minFiles,
-    logger,
-  });
-  const sourceAnalysis = new SourceAnalysisService({ runner, logger });
-
-  const repoAnalysisService = new RepoAnalysisService({
-    archiveClient,
-    sourceAnalysis,
-    snapshotRepository,
-    limits: config.limits,
-    logger,
-  });
-
-  const churnClient =
-    overrides.churnClient ??
-    (config.churn.enabled
-      ? new GitChurnClient({
-          timeoutMs: config.churn.timeoutMs,
-          windowDays: config.churn.windowDays,
-        })
-      : null);
-  const healthService = new HealthService({ snapshotRepository, churnClient, logger });
-
-  return {
-    controllers: {
-      analyze: new AnalyzeController({ repoAnalysisService }),
-      repo: new RepoController({
-        repoQueryService: new RepoQueryService({ snapshotRepository }),
-        healthService,
-      }),
-      health: new HealthController(),
-    },
-    // Called on shutdown: stops the parse workers.
-    dispose: () => pool?.destroy(),
-  };
+    return {
+        controllers: {
+            analyze: new AnalyzeController({ repoAnalysisService }),
+            repo: new RepoController({
+                repoQueryService: new RepoQueryService({ snapshotRepository }),
+                healthService,
+            }),
+            health: new HealthController(),
+        },
+        // Called on shutdown: stops the parse workers.
+        dispose: () => pool?.destroy(),
+    };
 }

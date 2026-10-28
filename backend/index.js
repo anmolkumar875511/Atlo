@@ -10,16 +10,16 @@ const container = createContainer({ config, logger });
 const app = createApp({ config, logger, container });
 
 const server = app.listen(config.port, () => {
-  logger.info({ port: config.port, env: config.env }, 'Atlo server listening');
+    logger.info({ port: config.port, env: config.env }, 'Atlo server listening');
 });
 
 function shutdown(signal) {
-  logger.info({ signal }, 'shutting down');
-  server.close(async () => {
-    await container.dispose();
-    process.exit(0);
-  });
-  setTimeout(() => process.exit(1), 10_000).unref();
+    logger.info({ signal }, 'shutting down');
+    server.close(async () => {
+        await container.dispose();
+        process.exit(0);
+    });
+    setTimeout(() => process.exit(1), 10_000).unref();
 }
 process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
