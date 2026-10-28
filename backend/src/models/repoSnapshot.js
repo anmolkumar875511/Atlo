@@ -13,7 +13,7 @@ export function snapshotId(repo) {
 
 export function createSnapshot({ repo, extraction, analysis, ingestMs, now = Date.now() }) {
   const { files, skipped, truncated } = extraction;
-  const { graph, fileAnalyses } = analysis;
+  const { graph, fileAnalyses, onboarding, callLinks, calledBy } = analysis;
   const tree = buildFileTree(repo.name, files);
 
   // path -> files that import it, for the code panel's "imported by" list
@@ -33,6 +33,10 @@ export function createSnapshot({ repo, extraction, analysis, ingestMs, now = Dat
     ),
     contents: new Map(files.map((f) => [f.path, f.content])),
     analyses: fileAnalyses,
+    onboarding,
+    callLinks,
+    calledBy,
+    health: null, // filled in on demand by HealthService
     importedBy,
     searchIndex: buildSearchIndex({ files, analyses: fileAnalyses }),
     stats: {
