@@ -1,16 +1,29 @@
-# React + Vite
+# Atlo frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 19 + Vite web app. Paste a repository URL, see stats, an interactive dependency graph (Cytoscape.js), a code panel (CodeMirror 6) with complexity and token counts, search, and a file tree. MVC on the client.
 
-Currently, two official plugins are available:
+## Run
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+npm run dev        # http://localhost:5173 (proxies /api to http://localhost:4000)
+npm run check      # lint + format check + tests
+npm run build      # production build in dist/
+```
 
-## React Compiler
+Set `VITE_API_BASE_URL` (see `.env.example`) when the API is on another origin.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Structure (`src/`)
 
-## Expanding the ESLint configuration
+| Folder         | Layer      | Job                                                                |
+| -------------- | ---------- | ------------------------------------------------------------------ |
+| `views/`       | View       | Components and their CSS. No fetch, no business logic.             |
+| `controllers/` | Controller | `useAnalyze` hook and the pure `analyzeReducer` state machine.     |
+| `services/`    | Service    | `http.js` (fetch wrapper) and `atloApi.js` (API calls).            |
+| `models/`      | Model      | Tree filter, formatting helpers, `ApiError` and user-facing hints. |
+| `constants/`   |            | API prefix and error codes (mirrored from the backend).            |
+| `styles/`      |            | `tokens.css` (colour, type, spacing) and `base.css`.               |
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Design tokens: edit the raw palette block in `styles/tokens.css` to re-theme the whole app.
+
+Add `?debug` to the URL to show an FPS counter on the graph.
