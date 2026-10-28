@@ -5,3 +5,7 @@ export function renderFile(details) {
 export function renderSearch(query, results) {
   return { data: { query, results } };
 }
+
+export function renderHealth(report) {
+  return { data: report };
+}
