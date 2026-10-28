@@ -1,15 +1,19 @@
+
+import 'dotenv/config';
 import { randomUUID } from 'node:crypto';
 import compression from 'compression';
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
+import pino from 'pino';
 import pinoHttp from 'pino-http';
 import { API_PREFIX } from './src/constants/api.js';
+import { loadConfig } from './src/config/env.js';
 import { errorHandler } from './src/middleware/errorHandler.js';
 import { notFound } from './src/middleware/notFound.js';
+import { createContainer } from './src/container.js';
 import { createApiRouter } from './src/routes/index.js';
 
-// Builds the Express app without starting it, so tests can use it with supertest.
 export function createApp({ config, logger, container }) {
     const app = express();
     app.disable('x-powered-by');
@@ -26,9 +30,12 @@ export function createApp({ config, logger, container }) {
                 res.setHeader('x-request-id', id);
                 return id;
             },
-            autoLogging: { ignore: (req) => req.url === `${API_PREFIX}/health` },
+            autoLogging: {
+                ignore: (req) => req.url === `${API_PREFIX}/health`,
+            },
         })
     );
+
     app.use(helmet());
     app.use(cors({ origin: config.corsOrigins, methods: ['GET', 'POST'] }));
     app.use(compression());
@@ -45,5 +52,14 @@ export function createApp({ config, logger, container }) {
 
     app.use(notFound);
     app.use(errorHandler(logger));
+
     return app;
 }
+
+const config = loadConfig();
+const logger = pino({ level: config.logLevel });
+const container = createContainer({ config, logger });
+
+const app = createApp({ config, logger, container });
+
+export default app;
