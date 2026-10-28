@@ -5,5 +5,5 @@ import { FileAnalyzer } from './fileAnalyzer.js';
 const analyzer = new FileAnalyzer();
 
 parentPort.on('message', ({ id, files }) => {
-  parentPort.postMessage({ id, results: files.map((file) => analyzer.safeAnalyze(file)) });
+    parentPort.postMessage({ id, results: files.map((file) => analyzer.safeAnalyze(file)) });
 });
