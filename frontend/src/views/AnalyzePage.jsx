@@ -1,5 +1,6 @@
 import { lazy, Suspense, useState } from 'react';
 import { useAnalyze } from '../controllers/useAnalyze.js';
+import { warmUpLayoutWorker } from '../services/layoutClient.js';
 import ErrorBanner from './ErrorBanner.jsx';
 import FileTree from './FileTree.jsx';
 import LoadingState from './LoadingState.jsx';
@@ -8,7 +9,15 @@ import StatsBar from './StatsBar.jsx';
 import Tabs from './Tabs.jsx';
 
 // Cytoscape is large, so it is only downloaded when a graph is actually shown.
-const GraphPanel = lazy(() => import('./graph/GraphPanel.jsx'));
+const loadGraphPanel = () => import('./graph/GraphPanel.jsx');
+const GraphPanel = lazy(loadGraphPanel);
+
+// The server needs a second or more to analyze a repository. Meanwhile the browser can already
+// fetch the graph code and start the layout worker, so neither waits for the answer.
+function warmUp() {
+  loadGraphPanel();
+  warmUpLayoutWorker();
+}
 
 const TABS = [
   { id: 'graph', label: 'Dependency graph' },
@@ -21,7 +30,13 @@ export default function AnalyzePage() {
 
   return (
     <>
-      <RepoInput onSubmit={analyze} disabled={status === 'loading'} />
+      <RepoInput
+        onSubmit={(value) => {
+          warmUp();
+          analyze(value);
+        }}
+        disabled={status === 'loading'}
+      />
 
       {status === 'loading' && <LoadingState url={url} />}
       {status === 'error' && <ErrorBanner error={error} onDismiss={reset} />}

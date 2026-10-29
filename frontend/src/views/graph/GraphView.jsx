@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import cytoscape from 'cytoscape';
 import fcose from 'cytoscape-fcose';
 import { nodeColor, toElements } from '../../models/graph.js';
+import { layoutInput, toPositions } from '../../models/layoutPlan.js';
+import { requestLayout } from '../../services/layoutClient.js';
 
 cytoscape.use(fcose);
 
@@ -165,23 +167,49 @@ export default function GraphView({
       cy.add(elements);
     });
 
-    // Wait a tick so the "laying out" message can paint before the layout blocks the thread.
-    const timer = setTimeout(() => {
-      cy.layout({
-        name: 'fcose',
-        animate: false,
-        randomize: true,
-        quality: cy.nodes().length > HUGE_GRAPH_NODES ? 'draft' : 'default',
-        nodeSeparation: 75,
-        idealEdgeLength: 70,
-        packComponents: true,
-        padding: 30,
-      }).run();
+    const nodeCount = elements.filter((e) => e.group === 'nodes').length;
+    // One layout, same quality as before, so the map looks exactly as it always did.
+    const stages = [nodeCount > HUGE_GRAPH_NODES ? 'draft' : 'default'];
+    let timer = null;
+
+    // Fallback when a background thread is not available: lay out here, after a tick so the
+    // "laying out" message can paint first. This blocks the page while it runs.
+    const layoutOnMainThread = () => {
+      timer = setTimeout(() => {
+        cy.layout({
+          name: 'fcose',
+          animate: false,
+          randomize: true,
+          quality: nodeCount > HUGE_GRAPH_NODES ? 'draft' : 'default',
+          nodeSeparation: 75,
+          idealEdgeLength: 70,
+          packComponents: true,
+          padding: 30,
+        }).run();
+        cy.fit(undefined, 30);
+        setLaidOut(true);
+      }, 30);
+    };
+
+    // Preferred: lay out on a worker thread, so the page does not freeze while it runs.
+    const request = requestLayout(layoutInput(elements), stages, (msg) => {
+      if (msg.error) {
+        layoutOnMainThread();
+        return;
+      }
+      const positions = toPositions(msg.ids, msg.xs, msg.ys);
+      cy.layout({ name: 'preset', positions: (n) => positions[n.id()], fit: false }).run();
       cy.fit(undefined, 30);
       setLaidOut(true);
-    }, 30);
+      request.done();
+    });
 
-    return () => clearTimeout(timer);
+    if (!request) layoutOnMainThread();
+
+    return () => {
+      clearTimeout(timer);
+      request?.cancel();
+    };
   }, [graph, colors, hideIsolated]);
 
   // Folder colours <-> heat colours. Only the colour changes; the layout is untouched.
