@@ -1,0 +1,16 @@
+{
+  "name": "atlo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Atlo \u2026 The Astral Cartographer. backend/ (API) and frontend/ (web app) are independent projects.",
+  "scripts": {
+    "install:all": "npm --prefix backend install && npm --prefix frontend install",
+    "dev": "concurrently -n backend,frontend -c yellow,cyan \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
+    "test": "npm --prefix backend test && npm --prefix frontend test",
+    "check": "npm --prefix backend run check && npm --prefix frontend run check",
+    "build": "npm --prefix frontend run build"
+  },
+  "devDependencies": {
+    "concurrently": "^9"
+  }
+}
