@@ -39,6 +39,8 @@ const schema = z.object({
         .string()
         .regex(/^(auto|\d+)$/, 'use "auto" or a number')
         .default('auto'),
+    // Per-file analyses kept by content, shared across repositories. 0 turns it off.
+    ANALYSIS_CACHE_ENTRIES: z.coerce.number().int().min(0).default(20_000),
     WORKER_MIN_FILES: z.coerce.number().int().min(1).default(40),
     CHURN_ENABLED: z
         .enum(['true', 'false'])
@@ -81,6 +83,7 @@ export function loadConfig(source = process.env) {
             maxFiles: e.MAX_FILES,
         }),
         cache: Object.freeze({ maxEntries: e.CACHE_MAX_ENTRIES, ttlMs: e.CACHE_TTL_MS }),
+        analysisCacheEntries: e.ANALYSIS_CACHE_ENTRIES,
         workers: Object.freeze({
             count: resolveWorkerCount(e.WORKER_THREADS, e.NODE_ENV),
             minFiles: e.WORKER_MIN_FILES,

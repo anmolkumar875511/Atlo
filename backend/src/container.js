@@ -39,6 +39,13 @@ export function createContainer({ config, logger, overrides = {} }) {
         analyzer: new FileAnalyzer(),
         pool,
         minFilesForPool: config.workers.minFiles,
+        cache:
+            config.analysisCacheEntries > 0
+                ? new LruCache({
+                      maxEntries: config.analysisCacheEntries,
+                      ttlMs: 24 * 60 * 60 * 1000,
+                  })
+                : null,
         logger,
     });
     const sourceAnalysis = new SourceAnalysisService({ runner, logger });

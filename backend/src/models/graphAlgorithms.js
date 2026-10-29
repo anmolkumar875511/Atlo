@@ -130,34 +130,69 @@ export function findCycles(nodeIds, edges) {
     return cycles.map((cycle, i) => ({ id: `cycle-${i + 1}`, ...cycle }));
 }
 
-// Blast radius: how many files could break if this file changes. Reverse the edges (so a file
-// points at the files that import it) and walk outward with breadth-first search. The count does
-// not include the file itself. One search per file: O(V * (V + E)), fast enough with typed arrays.
+// Blast radius: how many files could break if this file changes (everything that depends on it,
+// directly or through other files; the file itself is not counted).
+//
+// The obvious way is one breadth-first search per file over the reversed edges: O(V * (V + E)).
+// That took 15 s for 20,000 files. Two facts make it fast:
+//   1. Files in the same circular-import group (strongly connected component) all have exactly
+//      the same set of dependents, so the work is done once per GROUP on the condensed graph,
+//      which is a DAG.
+//   2. On a DAG, "everything that can reach me" is my own files plus the union of that set for each
+//      group that imports me. A set of files is a bitset, and a union is one OR per 32 files.
+// Groups are visited importers-first, so every set is complete before it is needed.
+// Cost: O(E_groups * V / 32) time and O(groups * V / 32) words of memory (50 MB for 20,000 files).
 export function computeBlastRadius(nodeIds, edges) {
-    const { from, to } = indexEdges(nodeIds, edges);
-    const { start, targets } = buildAdjacency(nodeIds.length, to, from); // reversed
     const count = nodeIds.length;
-    const seen = new Int32Array(count); // stamp = the search that last visited the node
-    const queue = new Int32Array(count);
     const radius = new Map();
+    if (count === 0) return radius;
 
-    for (let source = 0; source < count; source += 1) {
-        const stamp = source + 1;
-        seen[source] = stamp;
-        queue[0] = source;
-        let head = 0;
-        let tail = 1;
-        while (head < tail) {
-            const v = queue[head++];
-            for (let i = start[v]; i < start[v + 1]; i += 1) {
-                const w = targets[i];
-                if (seen[w] !== stamp) {
-                    seen[w] = stamp;
-                    queue[tail++] = w;
+    const { from, to } = indexEdges(nodeIds, edges);
+    const forward = buildAdjacency(count, from, to);
+    const components = stronglyConnectedComponents(count, forward.start, forward.targets);
+
+    // Tarjan emits a group only after every group it imports, so the LAST emitted group imports
+    // nothing that comes after it. Walking in reverse therefore visits importers first.
+    const groupOf = new Int32Array(count);
+    components.forEach((members, g) => members.forEach((v) => (groupOf[v] = g)));
+
+    const importers = components.map(() => []); // group -> groups that import it
+    const lastSeen = new Int32Array(components.length).fill(-1); // dedupes (importer, group) pairs
+    for (let g = 0; g < components.length; g += 1) {
+        for (const v of components[g]) {
+            for (let i = forward.start[v]; i < forward.start[v + 1]; i += 1) {
+                const target = groupOf[forward.targets[i]];
+                if (target !== g && lastSeen[target] !== g) {
+                    lastSeen[target] = g;
+                    importers[target].push(g);
                 }
             }
         }
-        radius.set(nodeIds[source], tail - 1);
+    }
+
+    const words = (count + 31) >>> 5;
+    const reach = new Array(components.length); // group -> bitset of files that depend on it
+    for (let g = components.length - 1; g >= 0; g -= 1) {
+        const bits = new Uint32Array(words);
+        for (const v of components[g]) bits[v >>> 5] |= 1 << (v & 31);
+        for (const p of importers[g]) {
+            const other = reach[p];
+            for (let w = 0; w < words; w += 1) bits[w] |= other[w];
+        }
+        reach[g] = bits;
+        const total = popcount(bits);
+        for (const v of components[g]) radius.set(nodeIds[v], total - 1);
     }
     return radius;
+}
+
+function popcount(bits) {
+    let total = 0;
+    for (let i = 0; i < bits.length; i += 1) {
+        let x = bits[i];
+        x -= (x >>> 1) & 0x55555555;
+        x = (x & 0x33333333) + ((x >>> 2) & 0x33333333);
+        total += (((x + (x >>> 4)) & 0x0f0f0f0f) * 0x01010101) >>> 24;
+    }
+    return total;
 }

@@ -112,10 +112,38 @@ function kindOf(type, isMethod) {
 // comprehension clauses). A nested function is counted on its own, not inside its parent.
 // A file's complexity is 1 + every decision point in it. `commentLines` counts lines that are
 // comments or docstrings, which the onboarding score uses as a documentation signal.
+// What the walk needs to know about a node type, worked out once per type id.
+const NODE = { OTHER: 0, FUNCTION: 1, CLASS: 2, DECISION: 3, DOC_STATEMENT: 4 };
+const LEAF = { TOKEN: 0, COMMENT: 1, LOGICAL: 2 };
+
+function classify(cursor, profile) {
+    const type = cursor.nodeType;
+    const named = cursor.nodeIsNamed;
+    let node = NODE.OTHER;
+    if (named && profile.functions.has(type)) node = NODE.FUNCTION;
+    else if (named && profile.classes.has(type)) node = NODE.CLASS;
+    else if (profile.decisions.has(type)) node = NODE.DECISION;
+    else if (profile.docstrings && type === 'expression_statement') node = NODE.DOC_STATEMENT;
+
+    let leaf = LEAF.TOKEN;
+    if (type === profile.commentType) leaf = LEAF.COMMENT;
+    else if (profile.logicalTokens.has(type)) leaf = LEAF.LOGICAL;
+    return { type, node, leaf };
+}
+
 export class MetricsExtractor {
+    constructor() {
+        // grammar -> array indexed by node type id. Asking the cursor for the numeric id is much
+        // cheaper than asking for the type's name and "named" flag on every one of a million nodes.
+        this.typeInfo = new Map();
+    }
+
     extract(tree, grammar) {
         const profile = PROFILES[grammar];
         if (!profile) throw new Error(`No metrics profile for grammar: ${grammar}`);
+
+        if (!this.typeInfo.has(grammar)) this.typeInfo.set(grammar, []);
+        const infoById = this.typeInfo.get(grammar);
 
         const cursor = tree.walk();
         const functions = [];
@@ -158,10 +186,12 @@ export class MetricsExtractor {
 
         let finished = false;
         while (!finished) {
-            const type = cursor.nodeType;
+            const id = cursor.nodeTypeId;
+            const info = infoById[id] ?? (infoById[id] = classify(cursor, profile));
+            const type = info.type;
             let marker = null;
 
-            if (cursor.nodeIsNamed && profile.functions.has(type)) {
+            if (info.node === NODE.FUNCTION) {
                 const node = cursor.currentNode;
                 let name = nameOf(node);
                 const isMethod = profile.isMethod(node);
@@ -176,16 +206,16 @@ export class MetricsExtractor {
                     complexity: 1,
                 });
                 marker = 'function';
-            } else if (cursor.nodeIsNamed && profile.classes.has(type)) {
+            } else if (info.node === NODE.CLASS) {
                 const name = nameOf(cursor.currentNode);
                 classNames.push({
                     name: name ? clean(name) : null,
                     line: cursor.startPosition.row + 1,
                 });
                 marker = 'class';
-            } else if (profile.decisions.has(type)) {
+            } else if (info.node === NODE.DECISION) {
                 addDecision();
-            } else if (profile.docstrings && type === 'expression_statement') {
+            } else if (info.node === NODE.DOC_STATEMENT) {
                 const node = cursor.currentNode;
                 if (node.namedChildCount === 1 && node.namedChild(0).type === 'string') {
                     commentLines += cursor.endPosition.row - cursor.startPosition.row + 1;
@@ -201,12 +231,12 @@ export class MetricsExtractor {
             // The root of an empty file is also a leaf, but it is not a token. `markers` has one entry
             // per open ancestor, so it is empty only at the root. (cursor.currentDepth would also work
             // but walks the whole cursor stack on every call.)
-            if (type === profile.commentType) {
+            if (info.leaf === LEAF.COMMENT) {
                 commentLines += cursor.endPosition.row - cursor.startPosition.row + 1;
             } else if (markers.length > 0) {
                 tokens += 1;
             }
-            if (profile.logicalTokens.has(type)) addDecision();
+            if (info.leaf === LEAF.LOGICAL) addDecision();
             closeMarker(marker);
 
             while (!cursor.gotoNextSibling()) {

@@ -31,7 +31,9 @@ export class SourceAnalysisService {
         });
         const pyResolver = new PythonResolver({ filePaths });
 
-        const { results, mode } = await this.runner.run(sources);
+        const lap = stopwatch();
+        const { results, mode, cacheHits } = await this.runner.run(sources);
+        const timings = { extractMs: lap() };
 
         const fileAnalyses = new Map();
         const importsByFile = new Map();
@@ -56,6 +58,7 @@ export class SourceAnalysisService {
             fileAnalyses.set(file.path, { ...analysis, imports: resolved });
         }
 
+        timings.resolveMs = lap();
         const parseMs = Math.round(performance.now() - started);
         const graph = buildDependencyGraph({
             sources,
@@ -65,6 +68,8 @@ export class SourceAnalysisService {
             parseErrors,
         });
         graph.stats.parseMode = mode;
+        graph.stats.cacheHits = cacheHits;
+        timings.graphMs = lap();
 
         const nodeIds = graph.nodes.map((n) => n.id);
         const cycles = findCycles(nodeIds, graph.edges);
@@ -75,7 +80,9 @@ export class SourceAnalysisService {
             if (!importTargets.has(edge.source)) importTargets.set(edge.source, []);
             importTargets.get(edge.source).push(edge.target);
         }
+        timings.algorithmsMs = lap(); // cycles + blast radius
         const calls = buildCallGraph({ analyses: fileAnalyses, importTargets });
+        timings.callsMs = lap();
 
         addGraphInsights(graph, { cycles, blastRadius, callEdges: calls.edges });
         const onboarding = buildOnboarding({
@@ -83,6 +90,9 @@ export class SourceAnalysisService {
             edges: graph.edges,
             analyses: fileAnalyses,
         });
+
+        timings.onboardingMs = lap();
+        graph.stats.timings = timings;
 
         return {
             graph,
@@ -92,6 +102,17 @@ export class SourceAnalysisService {
             calledBy: calls.calledBy,
         };
     }
+}
+
+// Returns a function that gives the milliseconds since the previous call (or since creation).
+function stopwatch() {
+    let last = performance.now();
+    return () => {
+        const now = performance.now();
+        const ms = Math.round((now - last) * 10) / 10;
+        last = now;
+        return ms;
+    };
 }
 
 function resolveScript(resolver, path, imports) {
