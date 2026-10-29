@@ -96,7 +96,7 @@ Open http://localhost:5173 and paste `https://github.com/expressjs/express`. Add
 
 `:id` is the `id` from the analyze response. Expired analyses (30 minutes) return `404 SNAPSHOT_NOT_FOUND`. Errors always look like `{ "error": { "code", "message", "requestId", "details?" } }`. Error codes live in `backend/src/constants/errorCodes.js` and are mirrored in `frontend/src/constants/errorCodes.js`. If you change one, change the other.
 
-## How it works (viva notes)
+## How it works
 
 **Phase 1: ingestion**
 
@@ -130,9 +130,16 @@ Open http://localhost:5173 and paste `https://github.com/expressjs/express`. Add
 16. **Python** (`pythonResolver.js`): `import a.b`, `from a.b import c`, relative imports (`from ..x import y`), packages and `__init__.py`. Source roots are detected (the folder that contains a top-level package, plus `src/` and `lib/`). `from pkg import name` links to `pkg/name.py` when `name` is a submodule and to the package file only when `name` is something defined inside it, which avoids a false cycle for every package that imports its own submodules. Python metrics use the same single walk with a Python profile (`elif`, `except`, `and`/`or`, comprehensions; docstrings count as documentation).
 17. **Cache**: snapshots live in an LRU with a 30 minute TTL; the same repo twice answers in under 1 ms, and concurrent requests share one download.
 
+**Latency pass** (numbers in [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md))
+
+17a. **One query for imports and calls** (`scanExtractor.js`): every query walks the whole tree, so the two separate queries were merged and the `#eq?` predicate (which runs in JavaScript for every call) was removed: `require()` is spotted from the call name instead. The metrics walk asks the cursor for the numeric node-type id instead of the type name. Together: Vue core 3.9 s to 2.4 s.
+17b. **Content-hash analysis cache** (`analysisRunner.js`): a file's analysis is stored by hash of its text, so re-analyzing a repository (snapshot expired, another branch, a fork) only parses files that changed. Repeat `/analyze` responses are stored already gzipped, and file and search responses carry `Cache-Control`. `Server-Timing` shows where each request's time went. Set `ANALYSIS_CACHE_ENTRIES=0` to turn the cache off.
+17c. **Blast radius in O(E x V / 32)**: see item 23. 20,000 files: 15.3 s to 68 ms.
+17d. **Layout in a Web Worker** (`workers/layout.worker.js`, `layoutClient.js`, `layoutPlan.js`): the force layout runs on a background thread, so the page no longer freezes while it is computed, and it looks exactly as before. The graph code and the worker are preloaded while the server analyses. If workers are unavailable, layout falls back to the main thread.
+
 **Phase 5: call graph and cycles**
 
-18. **Call sites** (`callExtractor.js`): one tree-sitter query finds `f()`, `obj.f()` and `new F()`. Each call is attributed to the smallest named function that contains its line.
+18. **Call sites** (`scanExtractor.js`, in the same query as imports, see 17a): one tree-sitter query finds `f()`, `obj.f()` and `new F()`. Each call is attributed to the smallest named function that contains its line.
 19. **Call linking** (`callGraph.js`): a call is matched by name, first in its own file, then in the files it imports. A plain call can reach a function or class; a member call `x.f()` can reach a method (or any function through an imported module). This is **approximate**: there is no type information, so two functions with the same name can be mixed up, and calls through variables or `this` chains are not followed.
 20. **Circular imports, Tarjan SCC** (`graphAlgorithms.js`): one depth-first search keeps, for each node, its discovery order and the lowest order reachable from its subtree. When they are equal the node roots a strongly connected component, popped from a stack. Components with more than one file (or a self-import) are cycles. **O(V + E).** The recursion is replaced by an explicit stack, so a 60,000-file import chain does not overflow (there is a test for it). A breadth-first search inside the component finds one concrete loop (`a -> b -> c -> a`) to show.
 
@@ -143,7 +150,7 @@ Open http://localhost:5173 and paste `https://github.com/expressjs/express`. Add
 
 **Phase 7: blast radius and onboarding**
 
-23. **Blast radius**: reverse the import edges and run a breadth-first search from each file; the count of files reached (excluding itself) is how many files could break. O(V (V + E)) with typed arrays (CSR adjacency). Selecting a file with the "Blast radius" toggle lights up exactly that set.
+23. **Blast radius**: how many files could break if this file changes (everything that depends on it, directly or through other files; the file itself is not counted). Files in the same circular group all share one answer, and on the condensed graph (a DAG) "who depends on me" is a bitset union, so the cost is O(E x V / 32) instead of one breadth-first search per file, O(V (V + E)). Selecting a file with the "Blast radius" toggle lights up exactly that set. The original search is kept in `backend/tests/reference/` and compared on random graphs.
 24. **Onboarding score** (0..1): 40% small blast radius, 30% low complexity, 20% has a test (a file named after it, or a test that imports it), 10% documented (comment and docstring lines). Files under 8 lines are down-weighted. The **learning path** has three stages: warm-up (best starters), connect (what those files import, least used first) and core (the hubs most files depend on, chosen first so the path always ends there).
 
 **Graph rendering optimizations** (frontend)
@@ -172,7 +179,18 @@ Measured results are in [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md).
 ```bash
 npm test          # backend (Vitest + supertest) and frontend (Vitest)
 npm run check     # lint + format + tests
+npm run coverage --prefix backend    # coverage with enforced thresholds (also frontend)
 ```
+
+About 390 tests. Beyond example-based tests the suite has:
+
+- **Differential tests:** each optimized component is compared with the slow original kept in `backend/tests/reference/` (extractors, metrics, blast radius), on samples, on this repository's own source files, and on whole repositories via `benchmarks/corpus-check.mjs` (0 mismatches over 528 Vue files).
+- **Property tests:** 900 random graphs for blast radius and 300 for Tarjan against brute-force oracles; random nested layouts for the caller lookup.
+- **Fuzzing:** truncated, damaged, binary, deeply nested (3,000 levels) and huge inputs must never throw; the resolvers must never throw or point outside the repository.
+- **Scale tests:** a generated 1,500-file repository through the real HTTP pipeline with exact expected counts; 20,000-node graphs with time budgets.
+- **Load test** (`benchmarks/load.mjs`) and a **browser run** (`benchmarks/ui_latency.py`) for latency, long tasks and fps.
+- **Real git:** the churn client is tested against a real local repository.
+- **CI:** `.github/workflows/ci.yml` runs lint, the full suite and the coverage floors on every push and pull request.
 
 Covered: Tarjan (no cycle, 2-cycle, longer loop, self-loop, separate cycles, 60k-node chain), blast radius (chain, diamond, disconnected, cycle), god score and percentile ranks, onboarding, call linking, Python imports, metrics and resolver, worker pool equals inline results, git log parsing and a real local git repository, the API end to end on a fixture with a cycle, and the frontend reducers and models.
 
