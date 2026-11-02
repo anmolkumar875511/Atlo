@@ -1,6 +1,6 @@
 # ✦ Atlo — The Astral Cartographer
 
-[![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/ci.yml)
+[![CI](https://github.com/anmolkumar875511/Atlo/actions/workflows/ci.yml/badge.svg)](https://github.com/anmolkumar875511/Atlo/actions/workflows/ci.yml)
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Node >=20](https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg)
 
@@ -149,7 +149,6 @@ Covered: Tarjan (no cycle, 2-cycle, longer loop, self-loop, separate cycles, 60k
 | CodeMirror 6 | Read-only code viewer |
 | Vitest, supertest | Unit and API tests |
 | ESLint, Prettier, concurrently | Code quality and dev workflow |
-| Claude (Anthropic) | Assisted with scaffolding, code, tests and documentation. |
 
 ## Team
 
