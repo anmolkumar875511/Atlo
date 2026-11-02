@@ -17,4 +17,11 @@ src/
 └── container.js                      composition root
 ```
 
-`npm run dev` · `npm test` · `npm run check`. Settings are in `.env.example`.
+```bash
+cp .env.example .env   # optional: every setting has a default
+npm run dev            # http://localhost:4000
+npm test
+npm run check          # lint + format check + tests
+```
+
+All settings are documented in `.env.example`.

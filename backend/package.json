@@ -1,6 +1,7 @@
 {
     "name": "backend",
     "version": "1.0.0",
+    "license": "MIT",
     "private": true,
     "type": "module",
     "main": "index.js",
@@ -42,7 +43,7 @@
         "supertest": "^7.0.0",
         "vitest": "^3.0.0"
     },
-    "description": "Atlo API: GitHub repository ingestion (Express, MVC)",
+    "description": "Atlo API: repository ingestion, parsing, dependency graph and health analysis (Express, MVC)",
     "engines": {
         "node": ">=20"
     },

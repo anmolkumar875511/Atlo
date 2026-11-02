@@ -1,21 +1,19 @@
 # Security Policy
 
-## Supported Versions
+## Supported versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+| Version | Supported |
+| ------- | --------- |
+| 1.0.x   | Yes       |
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
+## Reporting a vulnerability
 
-## Reporting a Vulnerability
+Please do not open a public issue for security problems.
 
-Use this section to tell people how to report a vulnerability.
+Report privately through GitHub: open the repository's **Security** tab and choose **Report a vulnerability**. Include the affected endpoint or file, steps to reproduce, and the impact you expect.
 
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+You can expect an acknowledgement within a few days and a status update once the report is confirmed or declined. Confirmed issues are fixed in a patch release and credited to the reporter unless you prefer otherwise.
+
+## Scope
+
+Atlo downloads public GitHub repositories and parses them in memory. Reports about the following are especially welcome: zip handling (path traversal, zip bombs), request validation, rate limiting, and anything that could expose files outside an analysed repository.

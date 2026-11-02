@@ -1,6 +1,7 @@
 {
   "name": "atlo-frontend",
   "version": "1.0.0",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "scripts": {
@@ -43,7 +44,7 @@
     "vite": "^6.0.0",
     "vitest": "^3.0.0"
   },
-  "description": "Atlo web app: paste a repo URL, explore the file tree (React + Vite, MVC)",
+  "description": "Atlo web app: interactive dependency graph, code panel and insights (React + Vite, MVC)",
   "engines": {
     "node": ">=20"
   }
